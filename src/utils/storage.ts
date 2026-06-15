@@ -30,7 +30,11 @@ export function loadWishlist(): WishlistItem[] {
     if (!raw) return getWishlistMockData();
     const parsed = JSON.parse(raw) as WishlistItem[];
     if (!Array.isArray(parsed)) return getWishlistMockData();
-    return parsed;
+    const migrated = parsed.map((item) => ({
+      ...item,
+      tags: item.tags || [],
+    }));
+    return migrated;
   } catch {
     return getWishlistMockData();
   }
@@ -178,6 +182,7 @@ function getWishlistMockData(): WishlistItem[] {
       type: 'movie',
       source: 'friend',
       note: '朋友说诺兰新片必看',
+      tags: ['烧脑', '科幻'],
       createdAt: iso(now),
     },
     {
@@ -186,6 +191,7 @@ function getWishlistMockData(): WishlistItem[] {
       type: 'book',
       source: 'douban',
       note: '豆瓣 Top250 高分',
+      tags: ['纪录片', '适合通勤听'],
       createdAt: iso(new Date(now.getTime() - 86400000)),
     },
     {
@@ -194,6 +200,7 @@ function getWishlistMockData(): WishlistItem[] {
       type: 'movie',
       source: 'bilibili',
       note: 'B站UP主推荐',
+      tags: ['科幻', '治愈系'],
       createdAt: iso(new Date(now.getTime() - 2 * 86400000)),
     },
     {
@@ -202,6 +209,7 @@ function getWishlistMockData(): WishlistItem[] {
       type: 'book',
       source: 'wechat',
       note: '某公众号推荐的经济读物',
+      tags: ['适合通勤听', '纪录片'],
       createdAt: iso(new Date(now.getTime() - 3 * 86400000)),
     },
   ];

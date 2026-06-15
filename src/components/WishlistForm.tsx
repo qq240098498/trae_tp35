@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Film, BookOpen } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Film, BookOpen, Plus, X } from 'lucide-react';
 import type { WishlistItem, WishlistType, RecommendSource } from '@/types';
-import { WISHLIST_TYPE_LABELS, SOURCE_LABELS, SOURCE_ICONS } from '@/types';
+import { WISHLIST_TYPE_LABELS, SOURCE_LABELS, SOURCE_ICONS, PRESET_TAGS } from '@/types';
 
 interface WishlistFormProps {
   item?: WishlistItem | null;
@@ -19,7 +19,10 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
   const [type, setType] = useState<WishlistType>('movie');
   const [source, setSource] = useState<RecommendSource>('friend');
   const [note, setNote] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (item) {
@@ -27,14 +30,39 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
       setType(item.type);
       setSource(item.source);
       setNote(item.note || '');
+      setTags(item.tags || []);
     } else {
       setName('');
       setType('movie');
       setSource('friend');
       setNote('');
+      setTags([]);
     }
     setError('');
+    setTagInput('');
   }, [item]);
+
+  const addTag = (tag: string) => {
+    const trimmed = tag.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+    }
+    setTagInput('');
+    tagInputRef.current?.focus();
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +75,7 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
       type,
       source,
       note: note.trim() || undefined,
+      tags,
     });
   };
 
@@ -126,6 +155,60 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div>
+        <label className="label">标签（可选）</label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-500/20 text-primary-300 text-sm border border-primary-500/30"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={() => removeTag(tag)}
+                className="hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2 mb-3">
+          <input
+            ref={tagInputRef}
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            className="input-field flex-1"
+            placeholder="输入标签后按回车添加"
+          />
+          <button
+            type="button"
+            onClick={() => addTag(tagInput)}
+            className="btn btn-secondary px-4"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-2">常用标签：</p>
+          <div className="flex flex-wrap gap-2">
+            {PRESET_TAGS.filter((t) => !tags.includes(t)).slice(0, 8).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => addTag(tag)}
+                className="px-2.5 py-1 rounded-full text-xs bg-surface-dark text-gray-400 border border-primary-800/40 hover:border-primary-500/50 hover:text-gray-200 transition-colors"
+              >
+                + {tag}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

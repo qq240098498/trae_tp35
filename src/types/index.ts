@@ -31,6 +31,7 @@ export interface WishlistItem {
   type: WishlistType;
   source: RecommendSource;
   note?: string;
+  tags: string[];
   createdAt: string;
 }
 
@@ -44,6 +45,7 @@ export interface FilterState {
 export interface WishlistFilterState {
   type: WishlistType | 'all';
   source: RecommendSource | 'all';
+  tag: string | 'all';
   sortBy: 'createdAt';
   sortOrder: 'asc' | 'desc';
 }
@@ -102,6 +104,19 @@ export const SOURCE_ICONS: Record<RecommendSource, string> = {
   podcast: '🎧',
   other: '📝',
 };
+
+export const PRESET_TAGS = [
+  '治愈系',
+  '烧脑',
+  '催泪',
+  '适合通勤听',
+  '深夜必看',
+  '轻松搞笑',
+  '悬疑推理',
+  '科幻',
+  '爱情',
+  '纪录片',
+];
 
 export interface YearStats {
   year: number;

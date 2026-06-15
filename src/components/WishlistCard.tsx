@@ -14,6 +14,7 @@ interface WishlistCardProps {
   onEdit: (item: WishlistItem) => void;
   onDelete: (id: string) => void;
   onComplete: (item: WishlistItem) => void;
+  onTagClick?: (tag: string) => void;
   index: number;
 }
 
@@ -27,6 +28,7 @@ export default function WishlistCard({
   onEdit,
   onDelete,
   onComplete,
+  onTagClick,
   index,
 }: WishlistCardProps) {
   const Icon = TYPE_ICONS[item.type];
@@ -101,6 +103,23 @@ export default function WishlistCard({
             <span>{SOURCE_LABELS[item.source]}</span>
           </span>
         </div>
+
+        {item.tags && item.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {item.tags.map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tag);
+                }}
+                className="text-xs px-2 py-0.5 rounded-full bg-surface-dark text-gray-300 border border-primary-800/40 hover:border-primary-500/50 hover:text-white transition-colors cursor-pointer"
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
 
         {item.note && (
           <p className="text-sm text-gray-400 leading-relaxed line-clamp-3">{item.note}</p>

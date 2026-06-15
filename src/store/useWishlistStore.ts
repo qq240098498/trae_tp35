@@ -12,6 +12,8 @@ interface WishlistStore {
   getFilteredItems: () => WishlistItem[];
   getCount: () => number;
   markAsCompleted: (id: string) => EntryLikeData | null;
+  getAllTags: () => string[];
+  getTopTags: (limit?: number) => Array<{ tag: string; count: number }>;
 }
 
 interface EntryLikeData {
@@ -24,6 +26,7 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
   filters: {
     type: 'all',
     source: 'all',
+    tag: 'all',
     sortBy: 'createdAt',
     sortOrder: 'desc',
   },
@@ -69,6 +72,10 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
       result = result.filter((i) => i.source === filters.source);
     }
 
+    if (filters.tag !== 'all') {
+      result = result.filter((i) => i.tags.includes(filters.tag));
+    }
+
     result.sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return filters.sortOrder === 'desc' ? -diff : diff;
@@ -78,6 +85,29 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
   },
 
   getCount: () => get().items.length,
+
+  getAllTags: () => {
+    const { items } = get();
+    const tagSet = new Set<string>();
+    items.forEach((item) => {
+      item.tags.forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  },
+
+  getTopTags: (limit = 10) => {
+    const { items } = get();
+    const tagCount: Record<string, number> = {};
+    items.forEach((item) => {
+      item.tags.forEach((tag) => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      });
+    });
+    return Object.entries(tagCount)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  },
 
   markAsCompleted: (id) => {
     const item = get().items.find((i) => i.id === id);

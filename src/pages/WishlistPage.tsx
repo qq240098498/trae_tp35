@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Inbox, Plus, Filter, ChevronDown, Film, BookOpen } from 'lucide-react';
+import { Inbox, Plus, Filter, ChevronDown, Film, BookOpen, Tag, TrendingUp } from 'lucide-react';
 import WishlistCard from '@/components/WishlistCard';
 import Modal from '@/components/Modal';
 import WishlistForm from '@/components/WishlistForm';
@@ -15,7 +15,7 @@ interface WishlistPageProps {
 }
 
 export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProps) {
-  const { getFilteredItems, addItem, updateItem, deleteItem, setFilter, filters, markAsCompleted, getCount } =
+  const { getFilteredItems, addItem, updateItem, deleteItem, setFilter, filters, markAsCompleted, getCount, getAllTags, getTopTags } =
     useWishlistStore();
   const { addEntry } = useEntryStore();
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
@@ -66,6 +66,13 @@ export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProp
   const handleComplete = (item: WishlistItem) => {
     setCompletingItem(item);
   };
+
+  const handleTagClick = (tag: string) => {
+    setFilter('tag', tag);
+  };
+
+  const allTags = getAllTags();
+  const topTags = getTopTags(10);
 
   const typeOptions: Array<WishlistType | 'all'> = ['all', 'movie', 'book'];
   const sourceOptions: Array<RecommendSource | 'all'> = [
@@ -162,6 +169,25 @@ export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProp
               />
             </div>
 
+            <div className="relative">
+              <select
+                value={filters.tag}
+                onChange={(e) => setFilter('tag', e.target.value)}
+                className="input-field appearance-none pr-10 cursor-pointer min-w-[140px]"
+              >
+                <option value="all" className="bg-surface-dark">全部标签</option>
+                {allTags.map((tag) => (
+                  <option key={tag} value={tag} className="bg-surface-dark">
+                    #{tag}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
+
             <div className="h-6 w-px bg-primary-700/40 hidden lg:block" />
 
             <div className="flex items-center gap-1 p-1 bg-surface-dark rounded-lg border border-primary-700/40">
@@ -176,6 +202,69 @@ export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProp
           </div>
         </div>
       </div>
+
+      {filters.tag !== 'all' && (
+        <div className="card p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Tag size={16} className="text-primary-400" />
+              <span className="text-sm text-gray-300">当前筛选标签：</span>
+              <span className="px-2.5 py-1 rounded-full bg-primary-500/20 text-primary-300 text-sm font-medium">
+                #{filters.tag}
+              </span>
+              <span className="text-xs text-gray-500">（共 {items.length} 条结果）</span>
+            </div>
+            <button
+              onClick={() => setFilter('tag', 'all')}
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              清除筛选
+            </button>
+          </div>
+        </div>
+      )}
+
+      {topTags.length > 0 && (
+        <div className="card p-5 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center">
+              <TrendingUp size={18} className="text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-white">最常用标签 Top10</h3>
+              <p className="text-xs text-gray-500">点击标签快速筛选同类作品</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {topTags.map((item, idx) => {
+              const isActive = filters.tag === item.tag;
+              return (
+                <button
+                  key={item.tag}
+                  onClick={() => setFilter('tag', isActive ? 'all' : item.tag)}
+                  className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                      : 'bg-surface-dark text-gray-300 border border-primary-800/40 hover:border-primary-500/50 hover:text-white'
+                  }`}
+                >
+                  <span className={`text-xs font-bold ${
+                    isActive ? 'text-primary-200' : 'text-gray-500'
+                  }`}>
+                    #{idx + 1}
+                  </span>
+                  <span className="font-medium">{item.tag}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-primary-900/50 text-gray-400'
+                  }`}>
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="card p-16 text-center">
@@ -201,6 +290,7 @@ export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProp
               onEdit={handleEdit}
               onDelete={handleDelete}
               onComplete={handleComplete}
+              onTagClick={handleTagClick}
               index={idx}
             />
           ))}
