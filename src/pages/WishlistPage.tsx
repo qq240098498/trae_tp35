@@ -247,20 +247,16 @@ export default function WishlistPage({ formOpen, setFormOpen }: WishlistPageProp
         maxWidth="max-w-lg"
       >
         {completingItem && (
-          <div>
-            <p className="text-gray-400 text-sm mb-4">
-              将「{completingItem.name}」从待看移至存档，请填写完成信息：
-            </p>
-            <EntryForm
-              entry={null}
-              onSubmit={(data) => {
-                addEntry(data);
-                markAsCompleted(completingItem.id);
-                setCompletingItem(null);
-              }}
-              onCancel={() => setCompletingItem(null)}
-            />
-          </div>
+          <EntryForm
+            presetName={completingItem.name}
+            presetType={completingItem.type}
+            onSubmit={(data) => {
+              addEntry(data);
+              markAsCompleted(completingItem.id);
+              setCompletingItem(null);
+            }}
+            onCancel={() => setCompletingItem(null)}
+          />
         )}
       </Modal>
     </div>
