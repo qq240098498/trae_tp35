@@ -1,6 +1,8 @@
-import type { Entry } from '@/types';
+import type { Entry, WishlistItem } from '@/types';
 
 const STORAGE_KEY = 'media-archive-entries';
+const WISHLIST_STORAGE_KEY = 'media-archive-wishlist';
+const LAST_REMINDER_KEY = 'media-archive-last-reminder';
 
 export function loadEntries(): Entry[] {
   try {
@@ -20,6 +22,34 @@ export function saveEntries(entries: Entry[]): void {
   } catch (e) {
     console.error('Failed to save entries:', e);
   }
+}
+
+export function loadWishlist(): WishlistItem[] {
+  try {
+    const raw = localStorage.getItem(WISHLIST_STORAGE_KEY);
+    if (!raw) return getWishlistMockData();
+    const parsed = JSON.parse(raw) as WishlistItem[];
+    if (!Array.isArray(parsed)) return getWishlistMockData();
+    return parsed;
+  } catch {
+    return getWishlistMockData();
+  }
+}
+
+export function saveWishlist(items: WishlistItem[]): void {
+  try {
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.error('Failed to save wishlist:', e);
+  }
+}
+
+export function getLastReminderDate(): string | null {
+  return localStorage.getItem(LAST_REMINDER_KEY);
+}
+
+export function setLastReminderDate(date: string): void {
+  localStorage.setItem(LAST_REMINDER_KEY, date);
 }
 
 export function generateId(): string {
@@ -134,5 +164,48 @@ function getMockData(): Entry[] {
   ];
 
   saveEntries(mock);
+  return mock;
+}
+
+function getWishlistMockData(): WishlistItem[] {
+  const now = new Date();
+  const iso = (d: Date) => d.toISOString();
+
+  const mock: WishlistItem[] = [
+    {
+      id: generateId(),
+      name: '奥本海默',
+      type: 'movie',
+      source: 'friend',
+      note: '朋友说诺兰新片必看',
+      createdAt: iso(now),
+    },
+    {
+      id: generateId(),
+      name: '人类简史',
+      type: 'book',
+      source: 'douban',
+      note: '豆瓣 Top250 高分',
+      createdAt: iso(new Date(now.getTime() - 86400000)),
+    },
+    {
+      id: generateId(),
+      name: '沙丘2',
+      type: 'movie',
+      source: 'bilibili',
+      note: 'B站UP主推荐',
+      createdAt: iso(new Date(now.getTime() - 2 * 86400000)),
+    },
+    {
+      id: generateId(),
+      name: '置身事内',
+      type: 'book',
+      source: 'wechat',
+      note: '某公众号推荐的经济读物',
+      createdAt: iso(new Date(now.getTime() - 3 * 86400000)),
+    },
+  ];
+
+  saveWishlist(mock);
   return mock;
 }

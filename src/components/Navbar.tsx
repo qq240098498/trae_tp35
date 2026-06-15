@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { BookOpen, Film, Music2, Gamepad2, Plus, Layers } from 'lucide-react';
+import { BookOpen, Film, Music2, Gamepad2, Plus, Layers, ListTodo } from 'lucide-react';
+import { useWishlistStore } from '@/store/useWishlistStore';
 
 interface NavbarProps {
   onAdd: () => void;
@@ -7,6 +8,7 @@ interface NavbarProps {
 
 export default function Navbar({ onAdd }: NavbarProps) {
   const location = useLocation();
+  const wishlistCount = useWishlistStore((s) => s.getCount());
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -44,6 +46,24 @@ export default function Navbar({ onAdd }: NavbarProps) {
               }`}
             >
               存档列表
+            </NavLink>
+            <NavLink
+              to="/wishlist"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                isActive('/wishlist')
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-600/30'
+                  : 'text-gray-400 hover:text-white hover:bg-surface-light'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <ListTodo size={16} />
+                待看清单
+              </span>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs font-bold bg-accent-movie text-white rounded-full shadow-md">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
             </NavLink>
             <NavLink
               to="/summary"

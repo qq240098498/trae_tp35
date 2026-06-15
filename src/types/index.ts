@@ -1,6 +1,18 @@
 export type EntryType = 'movie' | 'book' | 'album' | 'game';
 
+export type WishlistType = 'movie' | 'book';
+
 export type Rating = 1 | 2 | 3 | 4 | 5;
+
+export type RecommendSource =
+  | 'friend'
+  | 'douban'
+  | 'wechat'
+  | 'weibo'
+  | 'zhihu'
+  | 'bilibili'
+  | 'podcast'
+  | 'other';
 
 export interface Entry {
   id: string;
@@ -13,10 +25,26 @@ export interface Entry {
   updatedAt: string;
 }
 
+export interface WishlistItem {
+  id: string;
+  name: string;
+  type: WishlistType;
+  source: RecommendSource;
+  note?: string;
+  createdAt: string;
+}
+
 export interface FilterState {
   type: EntryType | 'all';
   year: number | 'all';
   sortBy: 'rating' | 'date';
+  sortOrder: 'asc' | 'desc';
+}
+
+export interface WishlistFilterState {
+  type: WishlistType | 'all';
+  source: RecommendSource | 'all';
+  sortBy: 'createdAt';
   sortOrder: 'asc' | 'desc';
 }
 
@@ -25,6 +53,11 @@ export const TYPE_LABELS: Record<EntryType, string> = {
   book: '书籍',
   album: '专辑',
   game: '游戏',
+};
+
+export const WISHLIST_TYPE_LABELS: Record<WishlistType, string> = {
+  movie: '想看电影',
+  book: '想读书籍',
 };
 
 export const TYPE_COLORS: Record<EntryType, string> = {
@@ -46,6 +79,28 @@ export const TYPE_BG_COLORS: Record<EntryType, string> = {
   book: 'bg-accent-book/15',
   album: 'bg-accent-album/15',
   game: 'bg-accent-game/15',
+};
+
+export const SOURCE_LABELS: Record<RecommendSource, string> = {
+  friend: '朋友推荐',
+  douban: '豆瓣高分',
+  wechat: '公众号',
+  weibo: '微博',
+  zhihu: '知乎',
+  bilibili: 'B站',
+  podcast: '播客',
+  other: '其他',
+};
+
+export const SOURCE_ICONS: Record<RecommendSource, string> = {
+  friend: '👥',
+  douban: '⭐',
+  wechat: '💬',
+  weibo: '🌐',
+  zhihu: '💡',
+  bilibili: '📺',
+  podcast: '🎧',
+  other: '📝',
 };
 
 export interface YearStats {
