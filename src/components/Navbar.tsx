@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { BookOpen, Film, Music2, Gamepad2, Plus, Layers, ListTodo } from 'lucide-react';
+import { BookOpen, Film, Music2, Gamepad2, Plus, Layers, ListTodo, HandHeart } from 'lucide-react';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { useLendStore } from '@/store/useLendStore';
 
 interface NavbarProps {
   onAdd: () => void;
@@ -9,6 +10,7 @@ interface NavbarProps {
 export default function Navbar({ onAdd }: NavbarProps) {
   const location = useLocation();
   const wishlistCount = useWishlistStore((s) => s.getCount());
+  const overdueCount = useLendStore((s) => s.getOverdueRecords().length);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -74,6 +76,24 @@ export default function Navbar({ onAdd }: NavbarProps) {
               }`}
             >
               年度总结
+            </NavLink>
+            <NavLink
+              to="/lend"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                isActive('/lend')
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-600/30'
+                  : 'text-gray-400 hover:text-white hover:bg-surface-light'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <HandHeart size={16} />
+                借出/推荐
+              </span>
+              {overdueCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs font-bold bg-red-500 text-white rounded-full shadow-md">
+                  {overdueCount > 99 ? '99+' : overdueCount}
+                </span>
+              )}
             </NavLink>
           </div>
 

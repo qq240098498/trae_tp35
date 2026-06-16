@@ -126,3 +126,76 @@ export interface YearStats {
   byType: Record<EntryType, { count: number; avgRating: number }>;
   topEntries: Entry[];
 }
+
+export type LendItemType = 'book' | 'disc' | 'other';
+export type RecordType = 'lend' | 'recommend';
+export type FeedbackStatus = 'pending' | 'liked' | 'disliked' | 'neutral';
+
+export interface LendRecord {
+  id: string;
+  type: 'lend';
+  itemName: string;
+  itemType: LendItemType;
+  borrower: string;
+  lendDate: string;
+  expectedReturnDate: string;
+  actualReturnDate?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecommendRecord {
+  id: string;
+  type: 'recommend';
+  itemName: string;
+  itemType: EntryType;
+  recommendTo: string;
+  recommendDate: string;
+  feedback: FeedbackStatus;
+  feedbackNote?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type LendRecommendRecord = LendRecord | RecommendRecord;
+
+export interface LendFilterState {
+  recordType: RecordType | 'all';
+  itemType: LendItemType | EntryType | 'all';
+  status: 'active' | 'returned' | 'all';
+  sortBy: 'lendDate' | 'recommendDate' | 'expectedReturnDate' | 'createdAt';
+  sortOrder: 'asc' | 'desc';
+}
+
+export const LEND_ITEM_TYPE_LABELS: Record<LendItemType, string> = {
+  book: '书籍',
+  disc: '光盘',
+  other: '其他',
+};
+
+export const RECORD_TYPE_LABELS: Record<RecordType, string> = {
+  lend: '借出',
+  recommend: '推荐',
+};
+
+export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
+  pending: '待反馈',
+  liked: '喜欢',
+  disliked: '不喜欢',
+  neutral: '一般',
+};
+
+export const LEND_ITEM_TYPE_COLORS: Record<LendItemType, string> = {
+  book: 'bg-accent-book',
+  disc: 'bg-accent-album',
+  other: 'bg-accent-game',
+};
+
+export const FEEDBACK_STATUS_COLORS: Record<FeedbackStatus, string> = {
+  pending: 'text-gray-400 bg-gray-500/20 border-gray-500/30',
+  liked: 'text-green-400 bg-green-500/20 border-green-500/30',
+  disliked: 'text-red-400 bg-red-500/20 border-red-500/30',
+  neutral: 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30',
+};

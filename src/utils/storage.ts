@@ -1,8 +1,9 @@
-import type { Entry, WishlistItem } from '@/types';
+import type { Entry, WishlistItem, LendRecommendRecord, LendRecord, RecommendRecord } from '@/types';
 
 const STORAGE_KEY = 'media-archive-entries';
 const WISHLIST_STORAGE_KEY = 'media-archive-wishlist';
 const LAST_REMINDER_KEY = 'media-archive-last-reminder';
+const LEND_STORAGE_KEY = 'media-archive-lend-records';
 
 export function loadEntries(): Entry[] {
   try {
@@ -215,5 +216,99 @@ function getWishlistMockData(): WishlistItem[] {
   ];
 
   saveWishlist(mock);
+  return mock;
+}
+
+export function loadLendRecords(): LendRecommendRecord[] {
+  try {
+    const raw = localStorage.getItem(LEND_STORAGE_KEY);
+    if (!raw) return getLendMockData();
+    const parsed = JSON.parse(raw) as LendRecommendRecord[];
+    if (!Array.isArray(parsed)) return getLendMockData();
+    return parsed;
+  } catch {
+    return getLendMockData();
+  }
+}
+
+export function saveLendRecords(records: LendRecommendRecord[]): void {
+  try {
+    localStorage.setItem(LEND_STORAGE_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Failed to save lend records:', e);
+  }
+}
+
+function getLendMockData(): LendRecommendRecord[] {
+  const now = new Date();
+  const iso = (d: Date) => d.toISOString();
+  const dateStr = (d: Date) => d.toISOString().split('T')[0];
+
+  const mock: LendRecommendRecord[] = [
+    {
+      id: generateId(),
+      type: 'lend',
+      itemName: '三体全集',
+      itemType: 'book',
+      borrower: '张三',
+      lendDate: dateStr(new Date(now.getTime() - 30 * 86400000)),
+      expectedReturnDate: dateStr(new Date(now.getTime() - 7 * 86400000)),
+      note: '全套三本，记得催还',
+      createdAt: iso(new Date(now.getTime() - 30 * 86400000)),
+      updatedAt: iso(new Date(now.getTime() - 30 * 86400000)),
+    },
+    {
+      id: generateId(),
+      type: 'lend',
+      itemName: '星际穿越 4K蓝光碟',
+      itemType: 'disc',
+      borrower: '李四',
+      lendDate: dateStr(new Date(now.getTime() - 14 * 86400000)),
+      expectedReturnDate: dateStr(new Date(now.getTime() + 7 * 86400000)),
+      note: '限量收藏版',
+      createdAt: iso(new Date(now.getTime() - 14 * 86400000)),
+      updatedAt: iso(new Date(now.getTime() - 14 * 86400000)),
+    },
+    {
+      id: generateId(),
+      type: 'recommend',
+      itemName: '盗梦空间',
+      itemType: 'movie',
+      recommendTo: '王五',
+      recommendDate: dateStr(new Date(now.getTime() - 20 * 86400000)),
+      feedback: 'liked',
+      feedbackNote: '他说烧脑但很好看',
+      note: '诺兰经典',
+      createdAt: iso(new Date(now.getTime() - 20 * 86400000)),
+      updatedAt: iso(new Date(now.getTime() - 10 * 86400000)),
+    },
+    {
+      id: generateId(),
+      type: 'recommend',
+      itemName: '百年孤独',
+      itemType: 'book',
+      recommendTo: '赵六',
+      recommendDate: dateStr(new Date(now.getTime() - 5 * 86400000)),
+      feedback: 'pending',
+      note: '魔幻现实主义经典',
+      createdAt: iso(new Date(now.getTime() - 5 * 86400000)),
+      updatedAt: iso(new Date(now.getTime() - 5 * 86400000)),
+    },
+    {
+      id: generateId(),
+      type: 'lend',
+      itemName: '人类简史',
+      itemType: 'book',
+      borrower: '孙七',
+      lendDate: dateStr(new Date(now.getTime() - 60 * 86400000)),
+      expectedReturnDate: dateStr(new Date(now.getTime() - 30 * 86400000)),
+      actualReturnDate: dateStr(new Date(now.getTime() - 25 * 86400000)),
+      note: '已归还',
+      createdAt: iso(new Date(now.getTime() - 60 * 86400000)),
+      updatedAt: iso(new Date(now.getTime() - 25 * 86400000)),
+    },
+  ];
+
+  saveLendRecords(mock);
   return mock;
 }
