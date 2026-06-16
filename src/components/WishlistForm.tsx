@@ -14,6 +14,8 @@ const TYPE_ICONS: Record<WishlistType, typeof Film> = {
   book: BookOpen,
 };
 
+const MAX_TAGS = 10;
+
 export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<WishlistType>('movie');
@@ -44,7 +46,7 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
 
   const addTag = (tag: string) => {
     const trimmed = tag.trim();
-    if (trimmed && !tags.includes(trimmed)) {
+    if (trimmed && !tags.includes(trimmed) && tags.length < MAX_TAGS) {
       setTags([...tags, trimmed]);
     }
     setTagInput('');
@@ -159,7 +161,12 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
       </div>
 
       <div>
-        <label className="label">标签（可选）</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="label mb-0">标签（可选）</label>
+          <span className={`text-xs ${tags.length >= MAX_TAGS ? 'text-amber-400' : 'text-gray-500'}`}>
+            {tags.length}/{MAX_TAGS}
+          </span>
+        </div>
         <div className="flex flex-wrap gap-2 mb-3">
           {tags.map((tag) => (
             <span
@@ -184,32 +191,36 @@ export default function WishlistForm({ item, onSubmit, onCancel }: WishlistFormP
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={handleTagKeyDown}
-            className="input-field flex-1"
-            placeholder="输入标签后按回车添加"
+            disabled={tags.length >= MAX_TAGS}
+            className="input-field flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            placeholder={tags.length >= MAX_TAGS ? '已达标签数量上限' : '输入标签后按回车添加'}
           />
           <button
             type="button"
             onClick={() => addTag(tagInput)}
-            className="btn btn-secondary px-4"
+            disabled={tags.length >= MAX_TAGS}
+            className="btn btn-secondary px-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus size={18} />
           </button>
         </div>
-        <div>
-          <p className="text-xs text-gray-500 mb-2">常用标签：</p>
-          <div className="flex flex-wrap gap-2">
-            {PRESET_TAGS.filter((t) => !tags.includes(t)).slice(0, 8).map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => addTag(tag)}
-                className="px-2.5 py-1 rounded-full text-xs bg-surface-dark text-gray-400 border border-primary-800/40 hover:border-primary-500/50 hover:text-gray-200 transition-colors"
-              >
-                + {tag}
-              </button>
-            ))}
+        {tags.length < MAX_TAGS && (
+          <div>
+            <p className="text-xs text-gray-500 mb-2">常用标签：</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_TAGS.filter((t) => !tags.includes(t)).slice(0, 8).map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => addTag(tag)}
+                  className="px-2.5 py-1 rounded-full text-xs bg-surface-dark text-gray-400 border border-primary-800/40 hover:border-primary-500/50 hover:text-gray-200 transition-colors"
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div>
