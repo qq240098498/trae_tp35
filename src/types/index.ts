@@ -140,6 +140,7 @@ export interface LendRecord {
   lendDate: string;
   expectedReturnDate: string;
   actualReturnDate?: string;
+  entryId?: string;
   note?: string;
   createdAt: string;
   updatedAt: string;
@@ -154,6 +155,7 @@ export interface RecommendRecord {
   recommendDate: string;
   feedback: FeedbackStatus;
   feedbackNote?: string;
+  entryId?: string;
   note?: string;
   createdAt: string;
   updatedAt: string;

@@ -13,9 +13,13 @@ import {
   Clock,
   AlertTriangle,
   MessageSquare,
+  Link2,
+  ExternalLink,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Modal from './Modal';
 import LendForm from './LendForm';
+import { useEntryStore } from '@/store/useEntryStore';
 import type { LendRecord, RecommendRecord, FeedbackStatus } from '@/types';
 import {
   LEND_ITEM_TYPE_LABELS,
@@ -38,6 +42,13 @@ interface LendCardProps {
   index: number;
 }
 
+const TYPE_ICONS: Record<string, typeof Film> = {
+  movie: Film,
+  book: BookOpen,
+  album: Music2,
+  game: Gamepad2,
+};
+
 export default function LendCard({
   record,
   onEdit,
@@ -46,10 +57,14 @@ export default function LendCard({
   onUpdateFeedback,
   index,
 }: LendCardProps) {
+  const entries = useEntryStore((s) => s.entries);
+  const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [newFeedback, setNewFeedback] = useState<FeedbackStatus>('pending');
   const [newFeedbackNote, setNewFeedbackNote] = useState('');
+
+  const linkedEntry = record.entryId ? entries.find((e) => e.id === record.entryId) : null;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -188,6 +203,18 @@ export default function LendCard({
                   >
                     {RECORD_TYPE_LABELS[record.type]}
                   </span>
+                  {linkedEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/?type=${linkedEntry.type}&id=${linkedEntry.id}`)}
+                      className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30 hover:text-primary-300 transition-colors"
+                      title="点击查看存档详情"
+                    >
+                      <Link2 size={12} />
+                      已关联存档
+                      <ExternalLink size={10} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

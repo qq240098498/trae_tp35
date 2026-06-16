@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Film, BookOpen, Music2, Gamepad2, Disc3, HandHeart, Share2 } from 'lucide-react';
-import type { LendRecord, RecommendRecord, LendItemType, EntryType, FeedbackStatus, RecordType } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { Film, BookOpen, Music2, Gamepad2, Disc3, HandHeart, Share2, Link2, X, Database } from 'lucide-react';
+import EntrySelector from './EntrySelector';
+import type { LendRecord, RecommendRecord, LendItemType, EntryType, FeedbackStatus, RecordType, Entry } from '@/types';
 import {
   LEND_ITEM_TYPE_LABELS,
   TYPE_LABELS,
   FEEDBACK_STATUS_LABELS,
   RECORD_TYPE_LABELS,
+  TYPE_BG_COLORS,
+  TYPE_TEXT_COLORS,
 } from '@/types';
+import { useEntryStore } from '@/store/useEntryStore';
 
 interface LendFormProps {
   record?: LendRecord | RecommendRecord | null;
@@ -14,7 +18,15 @@ interface LendFormProps {
   onCancel: () => void;
 }
 
+const TYPE_ICONS: Record<EntryType, typeof Film> = {
+  movie: Film,
+  book: BookOpen,
+  album: Music2,
+  game: Gamepad2,
+};
+
 export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) {
+  const entries = useEntryStore((s) => s.entries);
   const [recordType, setRecordType] = useState<RecordType>('lend');
   const [itemName, setItemName] = useState('');
   const [lendItemType, setLendItemType] = useState<LendItemType>('book');
@@ -27,7 +39,11 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
   const [feedback, setFeedback] = useState<FeedbackStatus>('pending');
   const [feedbackNote, setFeedbackNote] = useState('');
   const [note, setNote] = useState('');
+  const [entryId, setEntryId] = useState<string | undefined>();
+  const [showEntrySelector, setShowEntrySelector] = useState(false);
   const [error, setError] = useState('');
+
+  const linkedEntry = entryId ? entries.find((e) => e.id === entryId) : null;
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -36,6 +52,7 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
     if (record) {
       setRecordType(record.type);
       setItemName(record.itemName);
+      setEntryId(record.entryId);
       if (record.type === 'lend') {
         setLendItemType(record.itemType);
         setBorrower(record.borrower);
@@ -62,9 +79,24 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
       setFeedback('pending');
       setFeedbackNote('');
       setNote('');
+      setEntryId(undefined);
     }
     setError('');
-  }, [record]);
+  }, [record, entries]);
+
+  const handleEntrySelect = (entry: Entry) => {
+    setEntryId(entry.id);
+    setItemName(entry.name);
+    if (recordType === 'recommend') {
+      setRecommendItemType(entry.type);
+    } else if (entry.type === 'book') {
+      setLendItemType('book');
+    }
+  };
+
+  const clearLinkedEntry = () => {
+    setEntryId(undefined);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +124,7 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
         borrower: borrower.trim(),
         lendDate,
         expectedReturnDate,
+        entryId,
         note: note.trim() || undefined,
       });
     } else {
@@ -110,6 +143,7 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
         recommendDate,
         feedback,
         feedbackNote: feedbackNote.trim() || undefined,
+        entryId,
         note: note.trim() || undefined,
       });
     }
@@ -133,6 +167,11 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
     recommend: Share2,
   };
 
+  const getAllowedTypes = (): EntryType[] => {
+    if (recordType === 'lend') return ['book'];
+    return ['movie', 'book', 'album', 'game'];
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
@@ -149,7 +188,10 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
               <button
                 key={t}
                 type="button"
-                onClick={() => setRecordType(t)}
+                onClick={() => {
+                  setRecordType(t);
+                  setEntryId(undefined);
+                }}
                 disabled={!!record}
                 className={`flex items-center justify-center gap-2 py-3 px-2 rounded-xl border-2 transition-all duration-200 ${
                   active
@@ -166,15 +208,77 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
       </div>
 
       <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="label mb-0">关联存档（可选）</label>
+          {!entryId && (
+            <button
+              type="button"
+              onClick={() => setShowEntrySelector(true)}
+              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors"
+            >
+              <Link2 size={14} />
+              从存档选择
+            </button>
+          )}
+        </div>
+        {linkedEntry ? (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+            <div
+              className={`w-10 h-10 rounded-lg ${TYPE_BG_COLORS[linkedEntry.type]} flex items-center justify-center flex-shrink-0`}
+            >
+              {React.createElement(TYPE_ICONS[linkedEntry.type], {
+                size: 18,
+                className: TYPE_TEXT_COLORS[linkedEntry.type],
+              })}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-medium ${TYPE_TEXT_COLORS[linkedEntry.type]}`}>
+                {linkedEntry.name}
+              </p>
+              <p className="text-xs text-gray-400">
+                {TYPE_LABELS[linkedEntry.type]} · {new Date(linkedEntry.date).toLocaleDateString('zh-CN')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearLinkedEntry}
+              className="p-1.5 rounded-lg hover:bg-surface-light text-gray-400 hover:text-white transition-colors"
+              title="取消关联"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-dark border border-dashed border-primary-700/40">
+            <Database size={18} className="text-gray-500 flex-shrink-0" />
+            <p className="text-sm text-gray-500">
+              {recordType === 'lend'
+                ? '点击上方按钮从存档中选择要借出的书籍'
+                : '点击上方按钮从存档中选择要推荐的作品'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div>
         <label className="label">物品名称 *</label>
         <input
           type="text"
           value={itemName}
-          onChange={(e) => setItemName(e.target.value)}
+          onChange={(e) => {
+            setItemName(e.target.value);
+            if (e.target.value !== linkedEntry?.name) {
+              setEntryId(undefined);
+            }
+          }}
           className="input-field"
           placeholder={recordType === 'lend' ? '例如：三体全集' : '例如：盗梦空间'}
-          autoFocus
         />
+        {entryId && (
+          <p className="text-xs text-gray-500 mt-1">
+            <span className="text-primary-400">●</span> 已关联存档，修改名称将自动取消关联
+          </p>
+        )}
       </div>
 
       <div>
@@ -348,6 +452,13 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
           {record ? '保存修改' : recordType === 'lend' ? '添加借出记录' : '添加推荐记录'}
         </button>
       </div>
+
+      <EntrySelector
+        open={showEntrySelector}
+        onClose={() => setShowEntrySelector(false)}
+        onSelect={handleEntrySelect}
+        allowedTypes={getAllowedTypes()}
+      />
     </form>
   );
 }
