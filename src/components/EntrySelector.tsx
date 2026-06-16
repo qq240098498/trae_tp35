@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Film, BookOpen, Music2, Gamepad2, Check, Plus } from 'lucide-react';
+import { Search, X, Film, BookOpen, Music2, Gamepad2, Check, Plus, Clock, AlertCircle } from 'lucide-react';
 import Modal from './Modal';
 import StarRating from './StarRating';
 import { useEntryStore } from '@/store/useEntryStore';
-import type { Entry, EntryType } from '@/types';
+import { useLendStore } from '@/store/useLendStore';
+import type { Entry, EntryType, LendRecord } from '@/types';
 import { TYPE_LABELS, TYPE_COLORS, TYPE_BG_COLORS, TYPE_TEXT_COLORS } from '@/types';
 
 interface EntrySelectorProps {
@@ -29,9 +30,24 @@ export default function EntrySelector({
   excludeIds = [],
 }: EntrySelectorProps) {
   const entries = useEntryStore((s) => s.entries);
+  const lendRecords = useLendStore((s) => s.records);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<EntryType | 'all'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const activeLendsByEntryId = useMemo(() => {
+    const map = new Map<string, LendRecord[]>();
+    lendRecords
+      .filter((r): r is LendRecord => r.type === 'lend' && !r.actualReturnDate && !!r.entryId)
+      .forEach((record) => {
+        if (record.entryId) {
+          const existing = map.get(record.entryId) || [];
+          existing.push(record);
+          map.set(record.entryId, existing);
+        }
+      });
+    return map;
+  }, [lendRecords]);
 
   const filteredEntries = useMemo(() => {
     return entries
@@ -48,8 +64,13 @@ export default function EntrySelector({
         }
         return true;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [entries, searchQuery, typeFilter, allowedTypes, excludeIds]);
+      .sort((a, b) => {
+        const aLent = activeLendsByEntryId.get(a.id)?.length || 0;
+        const bLent = activeLendsByEntryId.get(b.id)?.length || 0;
+        if (aLent !== bLent) return aLent - bLent;
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+  }, [entries, searchQuery, typeFilter, allowedTypes, excludeIds, activeLendsByEntryId]);
 
   const handleSelect = (entry: Entry) => {
     setSelectedId(entry.id);
@@ -125,6 +146,8 @@ export default function EntrySelector({
             filteredEntries.map((entry) => {
               const Icon = TYPE_ICONS[entry.type];
               const isSelected = selectedId === entry.id;
+              const activeLends = activeLendsByEntryId.get(entry.id) || [];
+              const isCurrentlyLent = activeLends.length > 0;
               return (
                 <div
                   key={entry.id}
@@ -132,16 +155,23 @@ export default function EntrySelector({
                   className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                     isSelected
                       ? 'border-primary-500 bg-primary-500/15'
+                      : isCurrentlyLent
+                      ? 'border-yellow-600/40 hover:border-yellow-500/60 bg-yellow-500/5 hover:bg-yellow-500/10'
                       : 'border-primary-800/40 hover:border-primary-600/60 bg-surface-dark/50 hover:bg-surface-dark'
                   }`}
                 >
                   <div
-                    className={`w-10 h-10 rounded-lg ${TYPE_BG_COLORS[entry.type]} flex items-center justify-center flex-shrink-0`}
+                    className={`w-10 h-10 rounded-lg ${TYPE_BG_COLORS[entry.type]} flex items-center justify-center flex-shrink-0 relative`}
                   >
                     <Icon size={18} className={TYPE_TEXT_COLORS[entry.type]} />
+                    {isCurrentlyLent && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center shadow-md">
+                        <Clock size={10} className="text-white" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4
                         className={`font-medium text-white truncate ${TYPE_TEXT_COLORS[entry.type]}`}
                       >
@@ -152,12 +182,23 @@ export default function EntrySelector({
                       >
                         {TYPE_LABELS[entry.type]}
                       </span>
+                      {isCurrentlyLent && (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                          <AlertCircle size={12} />
+                          借出中 ({activeLends.length})
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <StarRating value={entry.rating} readOnly size={12} />
                       <span className="text-xs text-gray-500">
                         {new Date(entry.date).toLocaleDateString('zh-CN')}
                       </span>
+                      {isCurrentlyLent && activeLends.length > 0 && (
+                        <span className="text-xs text-yellow-500/70">
+                          借给：{activeLends.map(l => l.borrower).join('、')}
+                        </span>
+                      )}
                     </div>
                     {entry.review && (
                       <p className="text-xs text-gray-400 mt-1 line-clamp-1">

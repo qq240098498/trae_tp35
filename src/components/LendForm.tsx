@@ -89,8 +89,12 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
     setItemName(entry.name);
     if (recordType === 'recommend') {
       setRecommendItemType(entry.type);
-    } else if (entry.type === 'book') {
-      setLendItemType('book');
+    } else {
+      if (entry.type === 'book') {
+        setLendItemType('book');
+      } else {
+        setLendItemType('disc');
+      }
     }
   };
 
@@ -168,8 +172,34 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
   };
 
   const getAllowedTypes = (): EntryType[] => {
-    if (recordType === 'lend') return ['book'];
-    return ['movie', 'book', 'album', 'game'];
+    if (recordType === 'recommend') {
+      return ['movie', 'book', 'album', 'game'];
+    }
+    switch (lendItemType) {
+      case 'book':
+        return ['book'];
+      case 'disc':
+        return ['album', 'movie'];
+      default:
+        return [];
+    }
+  };
+
+  const canLinkToArchive = (): boolean => {
+    if (recordType === 'recommend') return true;
+    return lendItemType !== 'other';
+  };
+
+  const handleLendItemTypeChange = (type: LendItemType) => {
+    setLendItemType(type);
+    if (type === 'other') {
+      setEntryId(undefined);
+    } else if (linkedEntry) {
+      const allowed = type === 'book' ? ['book'] : ['album', 'movie'];
+      if (!allowed.includes(linkedEntry.type)) {
+        setEntryId(undefined);
+      }
+    }
   };
 
   return (
@@ -207,58 +237,62 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="label mb-0">关联存档（可选）</label>
-          {!entryId && (
-            <button
-              type="button"
-              onClick={() => setShowEntrySelector(true)}
-              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors"
-            >
-              <Link2 size={14} />
-              从存档选择
-            </button>
+      {canLinkToArchive() && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="label mb-0">关联存档（可选）</label>
+            {!entryId && (
+              <button
+                type="button"
+                onClick={() => setShowEntrySelector(true)}
+                className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors"
+              >
+                <Link2 size={14} />
+                从存档选择
+              </button>
+            )}
+          </div>
+          {linkedEntry ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+              <div
+                className={`w-10 h-10 rounded-lg ${TYPE_BG_COLORS[linkedEntry.type]} flex items-center justify-center flex-shrink-0`}
+              >
+                {React.createElement(TYPE_ICONS[linkedEntry.type], {
+                  size: 18,
+                  className: TYPE_TEXT_COLORS[linkedEntry.type],
+                })}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium ${TYPE_TEXT_COLORS[linkedEntry.type]}`}>
+                  {linkedEntry.name}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {TYPE_LABELS[linkedEntry.type]} · {new Date(linkedEntry.date).toLocaleDateString('zh-CN')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearLinkedEntry}
+                className="p-1.5 rounded-lg hover:bg-surface-light text-gray-400 hover:text-white transition-colors"
+                title="取消关联"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-dark border border-dashed border-primary-700/40">
+              <Database size={18} className="text-gray-500 flex-shrink-0" />
+              <p className="text-sm text-gray-500">
+                {recordType === 'lend'
+                  ? lendItemType === 'book'
+                    ? '点击上方按钮从存档中选择要借出的书籍'
+                    : '点击上方按钮从存档中选择要借出的光盘（专辑/电影）'
+                  : '点击上方按钮从存档中选择要推荐的作品'}
+              </p>
+            </div>
           )}
         </div>
-        {linkedEntry ? (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
-            <div
-              className={`w-10 h-10 rounded-lg ${TYPE_BG_COLORS[linkedEntry.type]} flex items-center justify-center flex-shrink-0`}
-            >
-              {React.createElement(TYPE_ICONS[linkedEntry.type], {
-                size: 18,
-                className: TYPE_TEXT_COLORS[linkedEntry.type],
-              })}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`font-medium ${TYPE_TEXT_COLORS[linkedEntry.type]}`}>
-                {linkedEntry.name}
-              </p>
-              <p className="text-xs text-gray-400">
-                {TYPE_LABELS[linkedEntry.type]} · {new Date(linkedEntry.date).toLocaleDateString('zh-CN')}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={clearLinkedEntry}
-              className="p-1.5 rounded-lg hover:bg-surface-light text-gray-400 hover:text-white transition-colors"
-              title="取消关联"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-dark border border-dashed border-primary-700/40">
-            <Database size={18} className="text-gray-500 flex-shrink-0" />
-            <p className="text-sm text-gray-500">
-              {recordType === 'lend'
-                ? '点击上方按钮从存档中选择要借出的书籍'
-                : '点击上方按钮从存档中选择要推荐的作品'}
-            </p>
-          </div>
-        )}
-      </div>
+      )}
 
       <div>
         <label className="label">物品名称 *</label>
@@ -292,7 +326,7 @@ export default function LendForm({ record, onSubmit, onCancel }: LendFormProps) 
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setLendItemType(t)}
+                  onClick={() => handleLendItemTypeChange(t)}
                   className={`flex flex-col items-center gap-1 py-2.5 px-1.5 rounded-xl border-2 transition-all duration-200 ${
                     active
                       ? 'border-primary-500 bg-primary-500/15 text-primary-300'
